@@ -1,13 +1,15 @@
 #!/bin/bash
 # by lcs
 # 2018-12-13
+# 2019-03-08 优化重启tomcat
+
 if [ x"$1" = x ] ;then
-	echo "usage run-tomcat <port> <app-path>"
-	exit
+    echo "usage run-tomcat <port> <app-path>"
+    exit
 fi
 if [ x"$2" = x ] ;then
-	echo "usage run-tomcat <port> <app-path>"
-	exit
+    echo "usage run-tomcat <port> <app-path>"
+    exit
 fi
 
 port=$1
@@ -16,7 +18,7 @@ app_path=$(cd $2;pwd -P)
 echo $port 
 echo $app_path
 echo $app_name
-TOMCAT_HOME=/opt/apache-tomcat-8.5.35
+TOMCAT_HOME=/opt/apache-tomcat-8.5.38
 #JAVA_HOME=/opt/jdk1.8.0_181
 APPS_PATH=$TOMCAT_HOME/apps
 APP_PATH=$APPS_PATH/$port
@@ -29,11 +31,11 @@ work_path=$APP_PATH/work
 rm -rf $work_path
 
 if [ ! -d "$APPS_PATH" ];then
-	mkdir $APPS_PATH
+    mkdir $APPS_PATH
 fi
 
 if [ ! -d "$APP_PATH" ];then
-	mkdir $APP_PATH
+    mkdir $APP_PATH
 fi
 
 cat $TOMCAT_HOME/server.xml.tpl > $server_xml
@@ -43,33 +45,35 @@ sed -i 's|HOST_ATTR|workDir="'$work_path'" docBase="'$app_path'"|g' $server_xml
 shift
 shift
 
+function kill_pid() {
+    COUNT=0
+    PID=$1
+    PID_EXIST=`ps -f -p ${PID} | grep java`
+    echo "killing $PID ==> $PID_EXIST"
+    kill ${PID}
+    while [[ ${COUNT} -lt 10 ]]; do
+        PID_EXIST=`ps -f -p ${PID} | grep java`
+        if [[ -z "$PID_EXIST" ]]; then
+            echo ""
+            return
+        fi
+        echo -e ".\c"
+        sleep 1
+        COUNT=$((COUNT+1))
+    done
+    echo "\n kill -9 $PID"
+    kill -9 ${PID}
+}
 
-if [ -f $CATALINA_PID ];then
+PIDS=`ps -ef | grep java | grep -v grep | grep "$server_xml" |awk '{print $2}'`
 
-	pid=`cat $CATALINA_PID`
-
-	ps -p $pid >/dev/null 2>&1
-
-	if [ $? -eq 0 ] ; then
-		echo "using shutdonw.sh to stop tomcat"
-		$TOMCAT_HOME/bin/shutdown.sh -force -config $server_xml
-	fi
-
-	ps -p $pid >/dev/null 2>&1
-
-	if [ $? -eq 0 ] ; then
-		echo "using kill -9 to stop tomcat"
-		sleep 3
-		kill  -9 $pid
-	fi
-
-	sleep 1
-	echo "."
-	sleep 1
-	echo "."
-	sleep 1
-	echo "."
-	sleep 1
+if [ -n "$PIDS" ]; then
+    echo "tomcat server.xml => $server_xml is running !"
+    echo "PID: $PIDS"
+    for PID in $PIDS ; do
+       kill_pid $PID
+    done
+    sleep 1
 fi
 
 
