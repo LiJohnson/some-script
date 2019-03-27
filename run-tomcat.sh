@@ -14,7 +14,7 @@ fi
 
 port=$1
 app_path=$(cd $2;pwd -P)
-
+app_name=$(basename $app_path)
 echo $port 
 echo $app_path
 echo $app_name
@@ -25,7 +25,7 @@ APP_PATH=$APPS_PATH/$port
 CATALINA_PID=$APP_PATH/pid
 CATALINA_OUT=$APP_PATH/catalina.out
 
-server_xml=$APP_PATH/server.xml
+server_xml=$APP_PATH/server-${app_name}.xml
 work_path=$APP_PATH/work
 
 rm -rf $work_path
