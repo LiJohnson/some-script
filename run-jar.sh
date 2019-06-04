@@ -3,11 +3,22 @@
 # create 2018-03-29
 #
 # update 2019-01-31 by lcs
+# update 2019-06-04 by lcs
+
+if [ -z "$1" ];then
+    echo "missing jar file"
+    exit 1
+fi
 
 JAR_FILE=`ls $1`
 JAR_FILE_NAME=`basename $JAR_FILE`
 LOG_FILE=${JAR_FILE}.log
 shift
+
+if [ -z "$JAR_FILE_NAME" ];then
+    echo "unknown jar file"
+    exit 1
+fi
 
 function kill_pid() {
     COUNT=0
