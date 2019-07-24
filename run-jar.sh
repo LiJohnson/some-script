@@ -4,6 +4,7 @@
 #
 # update 2019-01-31 by lcs
 # update 2019-06-04 by lcs
+# update 2019-07-24 by lcs
 
 if [ -z "$1" ];then
     echo "missing jar file"
@@ -12,7 +13,10 @@ fi
 
 JAR_FILE=`ls $1`
 JAR_FILE_NAME=`basename $JAR_FILE`
-LOG_FILE=${JAR_FILE}.log
+if [ "$LOG_FILE" = "" ]
+then
+    LOG_FILE=${JAR_FILE}.log
+fi
 shift
 
 if [ -z "$JAR_FILE_NAME" ];then
@@ -40,7 +44,9 @@ function kill_pid() {
     kill -9 ${PID}
 }
 
-PIDS=`ps -ef | grep java | grep -v grep | grep "$JAR_FILE" |awk '{print $2}'`
+run_jar="$JAR_FILE $@"
+
+PIDS=`ps -ef | grep java | grep -v grep | grep "$run_jar" |awk '{print $2}'`
 
 if [ -n "$PIDS" ]; then
     echo "The $JAR_FILE is running !"
@@ -52,5 +58,5 @@ if [ -n "$PIDS" ]; then
 fi
 
 echo "LOG_FILE : $LOG_FILE"
-nohup java -jar $JAR_FILE  $@ > $LOG_FILE 2>&1 &
+nohup java -jar $run_jar > $LOG_FILE 2>&1 &
 #tail -f $LOG_FILE
