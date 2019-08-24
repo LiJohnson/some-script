@@ -5,6 +5,7 @@
 # update 2019-01-31 by lcs
 # update 2019-06-04 by lcs
 # update 2019-07-24 by lcs
+# update 2019-08-24 by lcs
 
 if [ -z "$1" ];then
     echo "missing jar file"
@@ -44,7 +45,7 @@ function kill_pid() {
     kill -9 ${PID}
 }
 
-run_jar="$JAR_FILE $@"
+run_jar=`echo  "$JAR_FILE $@" | sed 's/ $//g'`
 
 PIDS=`ps -ef | grep java | grep -v grep | grep "$run_jar" |awk '{print $2}'`
 
