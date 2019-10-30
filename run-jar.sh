@@ -33,7 +33,7 @@ function kill_pid() {
     kill ${PID}
     while [[ ${COUNT} -lt 10 ]]; do
         PID_EXIST=`ps -f -p ${PID} | grep java`
-        if [[ -n "$PID_EXIST" ]]; then
+        if [[ -z "$PID_EXIST" ]]; then
             echo ""
             return
         fi
