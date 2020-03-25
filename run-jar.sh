@@ -6,24 +6,27 @@
 # update 2019-06-04 by lcs
 # update 2019-07-24 by lcs
 # update 2019-08-24 by lcs
+# update 2020-03-25 by lcs
 
 if [ -z "$1" ];then
     echo "missing jar file"
     exit 1
 fi
 
-JAR_FILE=`ls $1`
-JAR_FILE_NAME=`basename $JAR_FILE`
+if [ ! -f "$1" ];then
+    echo "unknown jar file : $1"
+    exit 1
+fi
+
+JAR_PATH=$(cd "$(dirname $1)";pwd -P)
+JAR_FILE_NAME=`basename $1`
+JAR_FILE="$JAR_PATH/$JAR_FILE_NAME"
+
 if [ "$LOG_FILE" = "" ]
 then
     LOG_FILE=${JAR_FILE}.log
 fi
 shift
-
-if [ -z "$JAR_FILE_NAME" ];then
-    echo "unknown jar file"
-    exit 1
-fi
 
 function kill_pid() {
     COUNT=0
