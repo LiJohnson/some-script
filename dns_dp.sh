@@ -2,51 +2,50 @@
 
 # Dnspod.cn Domain api
 #
-DP_Id="151717"
+# DP_Id="1243"
 #
-DP_Key="0e953d481d3c3e26ec72959e7beacbd1q"
+# DP_Key="0e95345d48usdklcalsdhvadncbd1q"
 
 REST_API="https://dnsapi.cn"
-dns_dp_add acme-challenge.www.domain.com   "XKrxpRBosdIKFzxW_CT3KLZNf6q0HG9i01zxXp5CPBs"
+# dns_dp_add acme-challenge.www.domain.com   "XKrxpRBosdIKFzxW_CT3KLZNf6q0HG9i01zxXp5CPBs"
+
+source comm.sh
+
 ########  Public functions #####################
 
 #Usage: add  _acme-challenge.www.domain.com   "XKrxpRBosdIKFzxW_CT3KLZNf6q0HG9i01zxXp5CPBs"
-dns_dp_add() {
+_dns_dp_add() {
   fulldomain=$1
   txtvalue=$2
 
-  DP_Id="${DP_Id:-$(_readaccountconf_mutable DP_Id)}"
-  DP_Key="${DP_Key:-$(_readaccountconf_mutable DP_Key)}"
-  if [ -z "$DP_Id" ] || [ -z "$DP_Key" ]; then
-    DP_Id=""
-    DP_Key=""
-    _err "You don't specify dnspod api key and key id yet."
-    _err "Please create you key and try again."
-    return 1
-  fi
+  # DP_Id="${DP_Id:-$(_readaccountconf_mutable DP_Id)}"
+  # DP_Key="${DP_Key:-$(_readaccountconf_mutable DP_Key)}"
 
-  #save the api key and email to the account conf file.
-  _saveaccountconf_mutable DP_Id "$DP_Id"
-  _saveaccountconf_mutable DP_Key "$DP_Key"
-
-  _debug "First detect the root zone"
-  if ! _get_root "$fulldomain"; then
-    _err "invalid domain"
-    return 1
-  fi
+  # _debug "First detect the root zone"
+  # if ! _get_root "$fulldomain"; then
+  #   _err "invalid domain"
+  #   return 1
+  # fi
 
   add_record "$_domain" "$_sub_domain" "$txtvalue"
+  record_id=$(echo "$response" | grep -o "id.*"  | cut -d '"' -f 3)
+  echo "record_id $record_id"
 
 }
 
 #fulldomain txtvalue
-dns_dp_rm() {
+dns_dp_add_or_update() {
   fulldomain=$1
   txtvalue=$2
-
-  DP_Id="${DP_Id:-$(_readaccountconf_mutable DP_Id)}"
-  DP_Key="${DP_Key:-$(_readaccountconf_mutable DP_Key)}"
-
+  # DP_Id="${DP_Id:-$(_readaccountconf_mutable DP_Id)}"
+  # DP_Key="${DP_Key:-$(_readaccountconf_mutable DP_Key)}"
+  if [ -z "$DP_Id" ] || [ -z "$DP_Key" ]; then
+    DP_Id=""
+    DP_Key=""
+    _err "You don't specify dnspod api key(DP_KEY) and key id (DP_Id)yet. "
+    _err "Please create you key and try again."
+    return 1
+  fi
   _debug "First detect the root zone"
   if ! _get_root "$fulldomain"; then
     _err "invalid domain"
@@ -59,19 +58,21 @@ dns_dp_rm() {
   fi
 
   if _contains "$response" 'No records'; then
-    _info "Don't need to remove."
+    _info "No records > dns_dp_add"
+    _dns_dp_add $fulldomain $txtvalue
     return 0
   fi
 
-  record_id=$(echo "$response" | tr "{" "\n" | grep -- "$txtvalue" | grep '^"id"' | cut -d : -f 2 | cut -d '"' -f 2)
+  record_id=$(echo "$response"  | grep -o '"records":.*' | tr "{" "\n" |   grep '^"id"' | cut -d : -f 2 | cut -d '"' -f 2 | head -n 1) 
   _debug record_id "$record_id"
   if [ -z "$record_id" ]; then
     _err "Can not get record id."
     return 1
   fi
 
-  if ! _rest POST "Record.Remove" "login_token=$DP_Id,$DP_Key&format=json&lang=en&domain_id=$_domain_id&record_id=$record_id"; then
-    _err "Record.Remove error."
+  _info "Modify record $record_id"
+  if ! _rest POST "Record.Modify" "login_token=$DP_Id,$DP_Key&format=json&lang=en&domain_id=$_domain_id&sub_domain=$_sub_domain&record_id=$record_id&record_type=TXT&value=$txtvalue&record_line=默认"; then
+    _err "Record.Modify error."
     return 1
   fi
 
@@ -118,7 +119,7 @@ _get_root() {
     fi
 
     if _contains "$response" "successful"; then
-      _domain_id=$(printf "%s\n" "$response" | _egrep_o "\"id\":\"[^\"]*\"" | cut -d : -f 2 | tr -d \")
+      _domain_id=$(printf "%s\n" "$response" | grep -o "\"id\":\"[^\"]*\"" | cut -d : -f 2 | tr -d \")
       _debug _domain_id "$_domain_id"
       if [ "$_domain_id" ]; then
         _sub_domain=$(printf "%s" "$domain" | cut -d . -f 1-$p)
@@ -159,3 +160,16 @@ _rest() {
   _debug2 response "$response"
   return 0
 }
+
+## test
+# DP_Id=""
+# #
+# DP_Key=""
+
+# dns_dp_add_or_update 
+
+if [ -z "$2" ]; then
+  echo "usage : DP_Id=\"\" DP_Key=\"\" ./dns_dp.sh _acme-challenge.www.domain.com  XKrxpRBosdIKFzxW_CT3KLZNf6q0HG9i01zxXp5CPBs"
+else
+  dns_dp_add_or_update $1 $2
+fi
