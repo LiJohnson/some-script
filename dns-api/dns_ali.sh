@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 
-source comm.sh
+
+source "$(dirname $0)/comm.sh"
 
 Ali_API="https://alidns.aliyuncs.com/"
 

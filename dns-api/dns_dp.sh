@@ -9,7 +9,7 @@
 REST_API="https://dnsapi.cn"
 # dns_dp_add acme-challenge.www.domain.com   "XKrxpRBosdIKFzxW_CT3KLZNf6q0HG9i01zxXp5CPBs"
 
-source comm.sh
+source "$(dirname $0)/comm.sh"
 
 ########  Public functions #####################
 
