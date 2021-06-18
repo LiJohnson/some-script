@@ -2,13 +2,14 @@
 # by lcs
 # 2018-12-13
 # 2019-03-08 优化重启tomcat
+# 2021-06-18 添加可选参数[context-path]
 
 if [ x"$1" = x ] ;then
-    echo "usage run-tomcat <port> <app-path>"
+    echo "usage run-tomcat <port> <app-path> [context-path]"
     exit
 fi
 if [ x"$2" = x ] ;then
-    echo "usage run-tomcat <port> <app-path>"
+    echo "usage run-tomcat <port> <app-path> [context-path]"
     exit
 fi
 
@@ -38,9 +39,15 @@ if [ ! -d "$APP_PATH" ];then
     mkdir $APP_PATH
 fi
 
+context_path="/"
+if [ -n "$3" ] ;then
+    context_path=$3
+    shift
+fi
+
 cat $TOMCAT_HOME/server.xml.tpl > $server_xml
 sed -i "s|8080|$port|g" $server_xml
-sed -i 's|HOST_ATTR|workDir="'$work_path'" docBase="'$app_path'"|g' $server_xml
+sed -i 's|HOST_ATTR|path="'$context_path'" workDir="'$work_path'" docBase="'$app_path'"|g' $server_xml
 
 shift
 shift
